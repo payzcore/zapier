@@ -1,0 +1,20 @@
+{
+  "name": "zapier-payzcore",
+  "version": "1.0.0",
+  "description": "Zapier integration for PayzCore blockchain transaction monitoring API",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest --testTimeout 10000"
+  },
+  "dependencies": {
+    "zapier-platform-core": "15.x"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "zapier": {
+    "id": 0,
+    "key": "payzcore"
+  }
+}
