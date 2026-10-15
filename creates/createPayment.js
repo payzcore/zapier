@@ -1,7 +1,7 @@
 const perform = async (z, bundle) => {
   const baseUrl = bundle.authData.apiUrl || 'https://api.payzcore.com';
   const body = {
-    amount: bundle.inputData.amount,
+    amount: Number(bundle.inputData.amount),
     external_ref: bundle.inputData.external_ref,
   };
   if (bundle.inputData.network) body.network = bundle.inputData.network;
@@ -15,7 +15,7 @@ const perform = async (z, bundle) => {
     try {
       body.metadata = JSON.parse(bundle.inputData.metadata);
     } catch (e) {
-      /* ignore invalid JSON */
+      throw new z.errors.Error('Metadata must be valid JSON', 'InvalidMetadata', 400);
     }
   }
 

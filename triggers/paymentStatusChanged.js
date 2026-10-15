@@ -1,20 +1,31 @@
+// The API has no sort/order params. `updated_after` returns payments updated
+// after a timestamp, oldest first, so we look back a fixed window, page
+// through it and return newest first (Zapier expects reverse-chronological).
+// Dedup uses the composite `${id}_${status}` key, so each status change
+// triggers once.
+const LOOKBACK_MINUTES = 60;
+const PAGE_SIZE = 100;
+const MAX_PAGES = 5;
+
 const perform = async (z, bundle) => {
   const baseUrl = bundle.authData.apiUrl || 'https://api.payzcore.com';
-  const params = {
-    limit: '25',
-    sort: 'updated_at',
-    order: 'desc',
-  };
+  const updatedAfter = new Date(Date.now() - LOOKBACK_MINUTES * 60 * 1000).toISOString();
 
-  // Zapier calls perform repeatedly; dedup via composite id_status handles the rest.
-  // Limit kept low (25) to reduce API load since we rely on dedup, not time-based filtering.
-  const response = await z.request({
-    url: `${baseUrl}/v1/payments`,
-    params,
-  });
+  const payments = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const response = await z.request({
+      url: `${baseUrl}/v1/payments`,
+      params: {
+        updated_after: updatedAfter,
+        limit: String(PAGE_SIZE),
+        offset: String(page * PAGE_SIZE),
+      },
+    });
+    payments.push(...(response.data.payments || []));
+    if (!response.data.pagination || !response.data.pagination.has_more) break;
+  }
 
-  // Return with composite dedup key
-  return (response.data.payments || []).map((p) => ({
+  return payments.reverse().map((p) => ({
     ...p,
     id: `${p.id}_${p.status}`,
     payment_id: p.id,
